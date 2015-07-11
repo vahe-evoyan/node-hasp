@@ -3,6 +3,7 @@
 
 #include "hasp_api.h"
 #include "hasp.h"
+#include "errors.h"
 
 using namespace v8;
 
@@ -14,6 +15,11 @@ void login(const FunctionCallbackInfo<Value>& args) {
   status = hasp_login(HASP_DEFAULT_FID,
                   (hasp_vendor_code_t *)vendor_code,
                   &handle);
+  if (status) {
+    isolate->ThrowException(Exception::Error(
+      String::NewFromUtf8(isolate, hasp_statusmap[status])
+    ));
+  }
   args.GetReturnValue().Set(Integer::New(isolate,
                             static_cast<int32_t>(status)));
 }
