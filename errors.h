@@ -1,7 +1,10 @@
+#ifndef ERRORS_H
+#define ERRORS_H
+
 #include "hasp_api.h"
 #include <map>
 
-std::map<hasp_status_t, const char*> hasp_statusmap = {
+static std::map<hasp_status_t, const char*> hasp_statusmap = {
   {HASP_STATUS_OK, "Operation completed successfully"},
   {HASP_MEM_RANGE, "Invalid memory address"},
   {HASP_INV_PROGNUM_OPT, "Unknown/invalid Feature ID option"},
@@ -76,3 +79,5 @@ std::map<hasp_status_t, const char*> hasp_statusmap = {
   {HASP_NOT_IMPL, "Capability isn't available"},
   {HASP_INT_ERR, "Internal API error"}
 };
+
+#endif // ERRORS_H

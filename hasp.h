@@ -1,7 +1,15 @@
 #ifndef HASP_H
 #define HASP_H
 
-unsigned char vendor_code[] =
+#include <v8.h>
+#include <node.h>
+#include <node_object_wrap.h>
+#include "hasp_api.h"
+#include "errors.h"
+
+#define MEMBUFFER_SIZE 128
+
+static unsigned char vendor_code[] =
   "AzIceaqfA1hX5wS+M8cGnYh5ceevUnOZIzJBbXFD6dgf3tBkb9cvUF/Tkd/iKu2fsg9wAysYKw7"
   "RMAsVvIp4KcXle/v1RaXrLVnNBJ2H2DmrbUMOZbQUFXe698qmJsqNpLXRA367xpZ54i8kC5DTXw"
   "DhfxWTOZrBrh5sRKHcoVLumztIQjgWh37AzmSd1bLOfUGI0xjAL9zJWO3fRaeB0NS2KlmoKaVT5"
@@ -15,5 +23,24 @@ unsigned char vendor_code[] =
   "YTMzSoW5mxh3H9O8Ge5BqVeYMEW36q9wnOYfxOLNw6yQMf8f9sJN4KhZty02xm707S7VEfJJ1KN"
   "q7b5pP/3RjE0IKtB2gE6vAPRvRLzEohu0m7q1aUp8wAvSiqjZy7FLaTtLEApXYvLvz6PEJdj4Te"
   "gCZugj7c8bIOEqLXmloZ6EgVnjQ7/ttys7VFITB3mazzFiyQuKf4J6+b/a/Y";
+
+class Hasp : public node::ObjectWrap {
+  public:
+    static void Init(v8::Handle<v8::Object> exports);
+
+  private:
+    explicit Hasp();
+    ~Hasp();
+
+    static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static v8::Persistent<v8::Function> constructor;
+
+    static void login(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void get_size(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void read(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void write(const v8::FunctionCallbackInfo<v8::Value>& args);
+
+    hasp_handle_t handle;
+};
 
 #endif // HASP_H

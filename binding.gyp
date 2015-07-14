@@ -4,7 +4,7 @@
   "targets": [
     {
       "target_name": "hasp",
-      "sources": [ "hasp.cpp" ],
+      "sources": [ "main.cpp", "hasp.cpp" ],
       "conditions": [
         ["OS=='mac'", {
           "xcode_settings": {

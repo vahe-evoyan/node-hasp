@@ -1,5 +1,7 @@
 var assert = require('assert');
 var hasp = require('./');
 
-assert.equal(typeof hasp.login, 'function');
-assert.equal(hasp.login(), 0);
+var client = hasp.Hasp();
+assert.equal(typeof client.login, 'function');
+assert.equal(client.login(), 0);
+assert.equal(client.getSize(), 4032);
