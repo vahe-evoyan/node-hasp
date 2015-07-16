@@ -1,6 +1,6 @@
 {
   "name": "hasp",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "NodeJS wrapper for Sentinel HASP API",
   "main": "./build/Release/hasp.node",
   "scripts": {
