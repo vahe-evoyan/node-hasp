@@ -4,7 +4,7 @@
   "targets": [
     {
       "target_name": "hasp",
-      "sources": [ "main.cpp", "hasp.cpp" ],
+      "sources": [ "src/main.cpp", "src/hasp.cpp" ],
       "conditions": [
         ["OS=='mac'", {
           "xcode_settings": {
@@ -14,7 +14,7 @@
             "MACOSX_DEPLOYMENT_TARGET": "10.7"
           },
           "include_dirs": [
-            "./libs/hasp/darwin"
+            "libs/hasp/darwin"
           ],
           "libraries": [
             "-L../libs/hasp/darwin",
