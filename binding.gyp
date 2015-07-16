@@ -32,7 +32,7 @@
             "libs/hasp/linux"
           ],
           "libraries": [
-            "-L../libs/hasp/linux",
+            "-L../libs/hasp/linux/<(target_arch)",
             "-lhasp_linux"
           ],
         }],
