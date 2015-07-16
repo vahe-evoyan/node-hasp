@@ -21,6 +21,21 @@
             "-lhasp_darwin"
           ],
         }],
+        ["OS=='linux'", {
+          "cflags": [
+            "-std=c++11"
+          ],
+          "ldflags": [
+            "-stdlib=libc++"
+          ],
+          "include_dirs": [
+            "libs/hasp/linux"
+          ],
+          "libraries": [
+            "-L../libs/hasp/linux",
+            "-lhasp_linux"
+          ],
+        }],
       ],
     }
   ]
