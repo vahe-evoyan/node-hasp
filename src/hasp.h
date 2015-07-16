@@ -36,6 +36,7 @@ class Hasp : public node::ObjectWrap {
     static v8::Persistent<v8::Function> constructor;
 
     static void login(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void logout(const v8::FunctionCallbackInfo<v8::Value>& args);
     static void get_size(const v8::FunctionCallbackInfo<v8::Value>& args);
     static void read(const v8::FunctionCallbackInfo<v8::Value>& args);
     static void write(const v8::FunctionCallbackInfo<v8::Value>& args);

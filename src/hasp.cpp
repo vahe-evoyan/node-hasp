@@ -19,6 +19,7 @@ void Hasp::Init(Handle<Object> exports) {
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
   NODE_SET_PROTOTYPE_METHOD(tpl, "login", login);
+  NODE_SET_PROTOTYPE_METHOD(tpl, "logout", logout);
   NODE_SET_PROTOTYPE_METHOD(tpl, "getSize", get_size);
   NODE_SET_PROTOTYPE_METHOD(tpl, "write", write);
   NODE_SET_PROTOTYPE_METHOD(tpl, "read", read);
@@ -56,8 +57,23 @@ void Hasp::login(const FunctionCallbackInfo<Value>& args) {
       String::NewFromUtf8(isolate, hasp_statusmap[status])
     ));
   }
-  args.GetReturnValue().Set(Integer::New(isolate,
-                            static_cast<int32_t>(status)));
+  args.GetReturnValue().Set(Boolean::New(isolate,
+                            (status ? false : true)));
+}
+
+void Hasp::logout(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = Isolate::GetCurrent();
+  HandleScope scope(isolate);
+  Hasp* h = ObjectWrap::Unwrap<Hasp>(args.Holder());
+  hasp_status_t status;
+  status = hasp_logout(h->handle);
+  if (status) {
+    isolate->ThrowException(Exception::Error(
+      String::NewFromUtf8(isolate, hasp_statusmap[status])
+    ));
+  }
+  args.GetReturnValue().Set(Boolean::New(isolate,
+                            (status ? false : true)));
 } 
 
 void Hasp::get_size(const FunctionCallbackInfo<Value>& args) {
