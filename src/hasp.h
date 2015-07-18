@@ -28,6 +28,12 @@ class Hasp : public node::ObjectWrap {
   public:
     static void Init(v8::Handle<v8::Object> exports);
 
+    hasp_size_t get_size(v8::Isolate*);
+    char* encrypt(v8::Isolate*, char*, size_t);
+    char* encrypt_wrap(v8::Isolate*, char*, size_t);
+    char* decrypt(v8::Isolate*, char*, size_t);
+    char* unwrap_decrypt(v8::Isolate*, char*);
+
   private:
     explicit Hasp();
     ~Hasp();

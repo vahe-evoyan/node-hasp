@@ -1,5 +1,5 @@
 #include "hasp.h"
-#include <string.h>
+#include <cstring>
 
 using namespace v8;
 
@@ -78,17 +78,42 @@ void Hasp::logout(const FunctionCallbackInfo<Value>& args) {
 
 void Hasp::get_size(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = Isolate::GetCurrent();
-  hasp_status_t status;
-  hasp_size_t fsize;
   Hasp* h = ObjectWrap::Unwrap<Hasp>(args.Holder());
-  status = hasp_get_size(h->handle, HASP_FILEID_RW, &fsize);
+  int32_t fsize = static_cast<int32_t>(h->get_size(isolate));
+  args.GetReturnValue().Set(Integer::New(isolate, fsize));
+}
+
+hasp_size_t Hasp::get_size(Isolate* isolate) {
+  hasp_size_t fsize;
+  hasp_status_t status;
+  status = hasp_get_size(handle, HASP_FILEID_RW, &fsize);
   if (status) {
     isolate->ThrowException(Exception::Error(
       String::NewFromUtf8(isolate, hasp_statusmap[status])
     ));
   }
-  args.GetReturnValue().Set(Integer::New(isolate,
-                            static_cast<uint32_t>(fsize)));
+  return fsize;
+}
+
+char* Hasp::decrypt(Isolate* isolate, char* data, size_t length) {
+  hasp_status_t status;
+  status = hasp_decrypt(handle, data, length);
+  if (status) {
+    isolate->ThrowException(Exception::Error(
+      String::NewFromUtf8(isolate, hasp_statusmap[status])
+    ));
+  }
+  return data;
+}
+
+char* Hasp::unwrap_decrypt(Isolate* isolate, char* data) {
+  size_t length;
+  char* content;
+  memcpy(&length, data, __SIZEOF_SIZE_T__);
+  content = new char[length];
+  memcpy(content, data + __SIZEOF_SIZE_T__, length);
+  decrypt(isolate, content, length);
+  return content;
 }
 
 void Hasp::read(const FunctionCallbackInfo<Value>& args) {
@@ -96,14 +121,7 @@ void Hasp::read(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = Isolate::GetCurrent();
   HandleScope scope(isolate);
   hasp_status_t status;
-  hasp_size_t fsize;
-
-  status = hasp_get_size(h->handle, HASP_FILEID_RW, &fsize);
-  if (status) {
-    isolate->ThrowException(Exception::Error(
-      String::NewFromUtf8(isolate, hasp_statusmap[status])
-    ));
-  }
+  hasp_size_t fsize = h->get_size(isolate);
 
   char* data = new char[fsize];
   status = hasp_read(h->handle, HASP_FILEID_RW, 0, fsize, data);
@@ -113,16 +131,29 @@ void Hasp::read(const FunctionCallbackInfo<Value>& args) {
     ));
   }
 
-  size_t datalen = strlen(data);
-  datalen = datalen > 16 ? datalen : 16;
-  status = hasp_decrypt(h->handle, data, datalen);
+  char* content = h->unwrap_decrypt(isolate, data);
+  args.GetReturnValue().Set(String::NewFromUtf8(isolate, content));
+  delete data;
+  delete content;
+}
+
+char* Hasp::encrypt(Isolate* isolate, char* data, size_t length) {
+  hasp_status_t status;
+  status = hasp_encrypt(handle, data, length);
   if (status) {
     isolate->ThrowException(Exception::Error(
       String::NewFromUtf8(isolate, hasp_statusmap[status])
     ));
   }
+  return data;
+}
 
-  args.GetReturnValue().Set(String::NewFromUtf8(isolate, data));
+char* Hasp::encrypt_wrap(Isolate* isolate, char* content, size_t length) {
+  encrypt(isolate, content, length);
+  char* wrapped = new char[length + __SIZEOF_SIZE_T__];
+  memcpy(wrapped, &length, __SIZEOF_SIZE_T__);
+  memcpy(wrapped + __SIZEOF_SIZE_T__, content, length);
+  return wrapped;
 }
 
 void Hasp::write(const FunctionCallbackInfo<Value>& args) {
@@ -142,36 +173,23 @@ void Hasp::write(const FunctionCallbackInfo<Value>& args) {
   }
 
   Hasp* h = ObjectWrap::Unwrap<Hasp>(args.Holder());
-  String::Utf8Value data(args[0]);
+  String::Utf8Value input(args[0]);
   hasp_status_t status;
-  hasp_size_t fsize;
+  hasp_size_t fsize = h->get_size(isolate);
 
-  status = hasp_get_size(h->handle, HASP_FILEID_RW, &fsize);
-  if (status) {
-    isolate->ThrowException(Exception::Error(
-      String::NewFromUtf8(isolate, hasp_statusmap[status])
-    ));
-  }
-
-  size_t datalen = data.length();
-  datalen = datalen > 16 ? datalen : 16;
-  if (datalen > fsize) {
+  size_t length = input.length() > 16 ? input.length() : 16;
+  if (length + __SIZEOF_SIZE_T__ > fsize) {
     isolate->ThrowException(Exception::Error(
       String::NewFromUtf8(isolate, "Storage max size exceeded")
     ));
   }
 
-  status = hasp_encrypt(h->handle, *data, datalen);
+  char* data = h->encrypt_wrap(isolate, *input, length);
+  status = hasp_write(h->handle, HASP_FILEID_RW, 0, fsize, data);
   if (status) {
     isolate->ThrowException(Exception::Error(
       String::NewFromUtf8(isolate, hasp_statusmap[status])
     ));
   }
-
-  status = hasp_write(h->handle, HASP_FILEID_RW, 0, fsize, *data);
-  if (status) {
-    isolate->ThrowException(Exception::Error(
-      String::NewFromUtf8(isolate, hasp_statusmap[status])
-    ));
-  }
+  delete data;
 }
