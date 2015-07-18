@@ -1,10 +1,35 @@
 {
   "name": "hasp",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "NodeJS wrapper for Sentinel HASP API",
+  "keywords": [
+    "hasp",
+    "sentinel",
+    "auth",
+    "authentication",
+    "encryption",
+    "crypto"
+  ],
   "main": "./build/Release/hasp.node",
+  "author": "Vahe Evoyan (https://www.evoyan.org)",
+  "engines": {
+    "node": ">= 0.12.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vahe-evoyan/node-hasp.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vahe-evoyan/node-hasp/issues"
+  },
   "scripts": {
-    "test": "node test.js"
+    "test": "node-gyp configure build && nodeunit test"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "nodeunit": "~0.9.1"
   },
   "gypfile": true
 }
