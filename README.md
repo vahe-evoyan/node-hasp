@@ -7,6 +7,5 @@
 npm install -g node-gyp
 
 # Clone, build and test
-npm build
 npm test
 ```
