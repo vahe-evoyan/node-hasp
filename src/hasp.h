@@ -17,7 +17,7 @@ class Hasp : public node::ObjectWrap {
     char* encrypt(v8::Isolate*, char*, size_t);
     char* encrypt_wrap(v8::Isolate*, char*, size_t);
     char* decrypt(v8::Isolate*, char*, size_t);
-    char* unwrap_decrypt(v8::Isolate*, char*);
+    char* unwrap_decrypt(v8::Isolate*, char*, size_t&);
 
   private:
     explicit Hasp();

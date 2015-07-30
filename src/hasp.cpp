@@ -3,6 +3,8 @@
 
 using namespace v8;
 
+#define get_crypto_length(len) len > 16 ? len : 16
+
 static unsigned char vendor_code[] =
   "AzIceaqfA1hX5wS+M8cGnYh5ceevUnOZIzJBbXFD6dgf3tBkb9cvUF/Tkd/iKu2fsg9wAysYKw7"
   "RMAsVvIp4KcXle/v1RaXrLVnNBJ2H2DmrbUMOZbQUFXe698qmJsqNpLXRA367xpZ54i8kC5DTXw"
@@ -117,12 +119,12 @@ char* Hasp::decrypt(Isolate* isolate, char* data, size_t length) {
   return data;
 }
 
-char* Hasp::unwrap_decrypt(Isolate* isolate, char* data) {
-  size_t length;
+char* Hasp::unwrap_decrypt(Isolate* isolate, char* data, size_t &length) {
   memcpy(&length, data, __SIZEOF_SIZE_T__);
-  char* content = new char[length];
-  memcpy(content, data + __SIZEOF_SIZE_T__, length);
-  decrypt(isolate, content, length);
+  size_t crypto_length = get_crypto_length(length);
+  char* content = new char[crypto_length];
+  memcpy(content, data + __SIZEOF_SIZE_T__, crypto_length);
+  decrypt(isolate, content, crypto_length);
   return content;
 }
 
@@ -141,8 +143,11 @@ void Hasp::read(const FunctionCallbackInfo<Value>& args) {
     ));
   }
 
-  char* content = h->unwrap_decrypt(isolate, data);
-  args.GetReturnValue().Set(String::NewFromUtf8(isolate, content));
+  size_t length;
+  char* content = h->unwrap_decrypt(isolate, data, length);
+  args.GetReturnValue().Set(String::NewFromUtf8(
+    isolate, content, String::kNormalString, length
+  ));
   delete data;
   delete content;
 }
@@ -158,10 +163,11 @@ char* Hasp::encrypt(Isolate* isolate, char* data, size_t length) {
 }
 
 char* Hasp::encrypt_wrap(Isolate* isolate, char* content, size_t length) {
-  encrypt(isolate, content, length);
-  char* wrapped = new char[length + __SIZEOF_SIZE_T__];
+  size_t crypto_length = get_crypto_length(length);
+  encrypt(isolate, content, crypto_length);
+  char* wrapped = new char[crypto_length + __SIZEOF_SIZE_T__];
   memcpy(wrapped, &length, __SIZEOF_SIZE_T__);
-  memcpy(wrapped + __SIZEOF_SIZE_T__, content, length);
+  memcpy(wrapped + __SIZEOF_SIZE_T__, content, crypto_length);
   return wrapped;
 }
 
@@ -186,7 +192,7 @@ void Hasp::write(const FunctionCallbackInfo<Value>& args) {
   hasp_status_t status;
   hasp_size_t fsize = h->get_size(isolate);
 
-  size_t length = input.length() > 16 ? input.length() : 16;
+  size_t length = input.length();
   if (length + __SIZEOF_SIZE_T__ > fsize) {
     isolate->ThrowException(Exception::Error(
       String::NewFromUtf8(isolate, "Storage max size exceeded")

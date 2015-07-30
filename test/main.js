@@ -1,5 +1,6 @@
 var hasp = require('../build/Release/hasp');
 var fixture = require('./fixture');
+var crypto = require('crypto');
 
 var client = hasp.Hasp();
 
@@ -10,25 +11,25 @@ exports.testFunctionsExist = function(assert) {
   assert.equals(typeof client.read, 'function');
   assert.equals(typeof client.write, 'function');
   assert.done();
-}
+};
 
 exports.testLoginAndLogout = function(assert) {
   assert.ok(client.login());
   assert.ok(client.logout());
   assert.done();
-}
+};
 
 exports.testLogout = function(assert) {
   assert.throws(client.logout, Error, 'Invalid handle');
   assert.done();
-}
+};
 
 exports.testSize = function(assert) {
   client.login();
   assert.equals(client.getSize(), 4032);
   client.logout();
   assert.done();
-}
+};
 
 exports.testReadWrite = function(assert) {
   var shortData = 'Hello World',
@@ -40,7 +41,27 @@ exports.testReadWrite = function(assert) {
   assert.equals(client.read(), longData);
   client.logout();
   assert.done();
-}
+};
+
+exports.testReadWriteZero = function(assert) {
+  var data = 'Hello \0 World';
+  client.login();
+  client.write(data);
+  assert.equals(client.read(), data);
+  client.logout();
+  assert.done();
+};
+
+exports.testRandowReadWrites = function(assert) {
+  client.login();
+  for (var i = 0; i < 10; ++i) {
+    var dataLength = parseInt(Math.random() * 2016),
+        data = crypto.randomBytes(dataLength).toString();
+    client.write(data);
+    assert.equals(client.read(), data);
+  }
+  assert.done();
+};
 
 exports.testExceedSize = function(assert) {
   client.login();
@@ -49,4 +70,4 @@ exports.testExceedSize = function(assert) {
   }, Error, 'Storage max size exceeded');
   client.logout();
   assert.done();
-}
+};
