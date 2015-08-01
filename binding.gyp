@@ -25,9 +25,6 @@
           "cflags": [
             "-std=c++11"
           ],
-          "ldflags": [
-            "-stdlib=libc++"
-          ],
           "include_dirs": [
             "libs/hasp/linux"
           ],
