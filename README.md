@@ -25,7 +25,7 @@ $ sudo apt-get update && sudo apt-get -y upgrade
 Install build tools and Node JS v0.12
 
 ```
-$ sudo apt-get install build-essential
+$ sudo apt-get install build-essential g++
 $ curl -sL https://deb.nodesource.com/setup_0.12 | sudo bash -
 $ sudo apt-get install -y nodejs
 ```
@@ -55,6 +55,12 @@ In case if you get an EACCESS error, you need to change the ownership of your
 
 ```
 $ sudo chown -R <my user>:<my group> ~/.npm
+```
+
+Install Sentinel HL packages.
+
+```
+$ sudo dpkg -i aksusbd_2.5-1_i386.deb
 ```
 
 Finally build and test the module by running `npm test`. Note that the demo key
