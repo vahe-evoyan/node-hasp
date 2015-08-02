@@ -1,6 +1,11 @@
 Changelog
 =========
 
+## Version 0.2.0 - 01 Aug, 2015
+
+  - Adds linux (Ubuntu) with g++ support.
+  - The vendor key is now passed to the login function from JavaScript code.
+
 ## Version 0.1.1 - 30 Jul, 2015
 
 Fixes cases when the input string contains a `\0` (zero) characters.
