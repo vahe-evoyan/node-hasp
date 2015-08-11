@@ -46,6 +46,17 @@ void Hasp::New(const FunctionCallbackInfo<Value>& args) {
   }
 }
 
+
+bool Hasp::login(Isolate* isolate, hasp_vendor_code_t* vendor_code) {
+  hasp_status_t status = hasp_login(HASP_DEFAULT_FID, vendor_code, &handle);
+  if (status) {
+    isolate->ThrowException(Exception::Error(
+      String::NewFromUtf8(isolate, hasp_statusmap[status])
+    ));
+  }
+  return !status;
+}
+
 void Hasp::login(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = Isolate::GetCurrent();
   HandleScope scope(isolate);
@@ -64,16 +75,8 @@ void Hasp::login(const FunctionCallbackInfo<Value>& args) {
 
   Hasp* h = ObjectWrap::Unwrap<Hasp>(args.Holder());
   String::Utf8Value vendor_code(args[0]);
-  hasp_status_t status;
-  status = hasp_login(HASP_DEFAULT_FID,
-                  (hasp_vendor_code_t *) *vendor_code,
-                  &h->handle);
-  if (status) {
-    isolate->ThrowException(Exception::Error(
-      String::NewFromUtf8(isolate, hasp_statusmap[status])
-    ));
-  }
-  args.GetReturnValue().Set(Boolean::New(isolate, !status));
+  bool status = h->login(isolate, (hasp_vendor_code_t *) *vendor_code);
+  args.GetReturnValue().Set(Boolean::New(isolate, status));
 }
 
 void Hasp::logout(const FunctionCallbackInfo<Value>& args) {
