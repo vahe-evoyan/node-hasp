@@ -1,7 +1,11 @@
 #include "hasp.h"
+#include "baton.h"
 #include <cstring>
 
 using namespace v8;
+
+#include <iostream>
+using namespace std;
 
 #define get_crypto_length(len) len > 16 ? len : 16
 
@@ -57,6 +61,37 @@ bool Hasp::login(Isolate* isolate, hasp_vendor_code_t* vendor_code) {
   return !status;
 }
 
+hasp_status_t Hasp::login(hasp_vendor_code_t* vendor_code) {
+  return hasp_login(HASP_DEFAULT_FID, vendor_code, &handle);
+}
+
+void Hasp::async_login(uv_work_t* request) {
+  Baton* baton = static_cast<Baton*>(request->data);
+  // Isolate* isolate = Isolate::GetCurrent();
+  // Local<Object> object = Local<Object>::New(isolate, baton->holder);
+  // Hasp* h = ObjectWrap::Unwrap<Hasp>(object);
+  baton->status = baton->hasp->login((hasp_vendor_code_t *) baton->vendor_code);
+}
+
+void Hasp::on_login(uv_work_t* request, int status) {
+  Baton* baton = static_cast<Baton*>(request->data);
+  Isolate* isolate = Isolate::GetCurrent();
+  const uint8_t argc = 2;
+  Handle<Value> argv[argc];
+  argv[1] = Boolean::New(isolate, !baton->status);
+  if (baton->status) {
+    argv[0] = Exception::Error(String::NewFromUtf8(isolate,
+                               hasp_statusmap[baton->status]));
+  } else {
+    argv[0] = Null(isolate);
+  }
+  Local<Function> callback = Local<Function>::New(isolate, baton->callback);
+  Local<Object> object = Local<Object>::New(isolate, baton->holder);
+  callback->Call(object, argc, argv);
+  baton->callback.Reset();
+  delete baton;
+}
+
 void Hasp::login(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = Isolate::GetCurrent();
   HandleScope scope(isolate);
@@ -73,10 +108,22 @@ void Hasp::login(const FunctionCallbackInfo<Value>& args) {
     return;
   }
 
-  Hasp* h = ObjectWrap::Unwrap<Hasp>(args.Holder());
+  // Hasp* h = ObjectWrap::Unwrap<Hasp>(args.Holder());
+  // String::Utf8Value vendor_code(args[0]);
+  // bool status = h->login(isolate, (hasp_vendor_code_t *) *vendor_code);
+  // args.GetReturnValue().Set(Boolean::New(isolate, status));
+
+  Baton *baton = new Baton();
+  Local<Function> callback = Local<Function>::Cast(args[1]);
+  Local<Object> holder = Local<Object>::Cast(args.This());
+  baton->request.data = baton;
   String::Utf8Value vendor_code(args[0]);
-  bool status = h->login(isolate, (hasp_vendor_code_t *) *vendor_code);
-  args.GetReturnValue().Set(Boolean::New(isolate, status));
+  baton->vendor_code = new char[vendor_code.length()];
+  strncpy(baton->vendor_code, *vendor_code, vendor_code.length());
+  baton->callback.Reset(isolate, Persistent<Function>(isolate, callback));
+  baton->holder.Reset(isolate, Persistent<Object>(isolate, holder));
+  baton->hasp = ObjectWrap::Unwrap<Hasp>(args.Holder());
+  uv_queue_work(uv_default_loop(), &(baton->request), async_login, on_login);
 }
 
 void Hasp::logout(const FunctionCallbackInfo<Value>& args) {

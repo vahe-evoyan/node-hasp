@@ -4,6 +4,7 @@
 #include <v8.h>
 #include <node.h>
 #include <node_object_wrap.h>
+#include <uv.h>
 #include "hasp_api.h"
 #include "errors.h"
 
@@ -19,10 +20,14 @@ class Hasp : public node::ObjectWrap {
     char* decrypt(v8::Isolate*, char*, size_t);
     char* unwrap_decrypt(v8::Isolate*, char*, size_t&);
     bool login(v8::Isolate*, hasp_vendor_code_t*);
+	hasp_status_t login(hasp_vendor_code_t*);
 
   private:
     explicit Hasp();
     ~Hasp();
+
+    static void async_login(uv_work_t*);
+    static void on_login(uv_work_t*, int);
 
     static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
     static v8::Persistent<v8::Function> constructor;

@@ -5,6 +5,8 @@ var crypto = require('crypto');
 
 var client = hasp.Hasp();
 
+console.log(client);
+/*
 exports.testFunctionsExist = function(assert) {
   assert.equals(typeof client.login, 'function');
   assert.equals(typeof client.logout, 'function');
@@ -13,13 +15,19 @@ exports.testFunctionsExist = function(assert) {
   assert.equals(typeof client.write, 'function');
   assert.done();
 };
+*/
 
 exports.testLoginAndLogout = function(assert) {
-  assert.ok(client.login(configs.vendorCode));
-  assert.ok(client.logout());
-  assert.done();
+  console.log('THIS0', client, client instanceof hasp.Hasp);
+  client.login(configs.vendorCode, function(err, status){
+    assert.ok(status);
+    assert.equals(err, null);
+    assert.done();
+  });
+  // assert.ok(client.logout());
 };
 
+/*
 exports.testLogout = function(assert) {
   assert.throws(client.logout, Error, 'Invalid handle');
   assert.done();
@@ -72,3 +80,4 @@ exports.testExceedSize = function(assert) {
   client.logout();
   assert.done();
 };
+*/
