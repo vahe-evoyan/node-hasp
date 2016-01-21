@@ -114,8 +114,9 @@ void NodeHasp::read(const FunctionCallbackInfo<Value>& args) {
     ));
   }
   // size_t length; // unclear
+  // TODO: get length from hasp.read() function
   args.GetReturnValue().Set(String::NewFromUtf8(
-    isolate, content, String::kNormalString
+    isolate, content, String::kNormalString //, length
   ));
   delete content;
 }
