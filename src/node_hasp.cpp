@@ -64,13 +64,10 @@ void NodeHasp::login(const FunctionCallbackInfo<Value>& args) {
 
   NodeHasp* h = ObjectWrap::Unwrap<NodeHasp>(args.Holder());
   String::Utf8Value vendor_code(args[0]);
-  hasp_status_t status;
-  status = hasp_login(HASP_DEFAULT_FID,
-                  (hasp_vendor_code_t *) *vendor_code,
-                  &h->handle);
-  if (status) {
+  h->hasp.login(*vender_code);
+  if (h->hasp.is_error()) {
     isolate->ThrowException(Exception::Error(
-      String::NewFromUtf8(isolate, hasp_statusmap[status])
+      String::NewFromUtf8(isolate, h->hasp.get_message())
     ));
   }
   args.GetReturnValue().Set(Boolean::New(isolate, !status));
@@ -80,15 +77,16 @@ void NodeHasp::logout(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = Isolate::GetCurrent();
   HandleScope scope(isolate);
   NodeHasp* h = ObjectWrap::Unwrap<NodeHasp>(args.Holder());
-  hasp_status_t status;
-  status = hasp_logout(h->handle);
-  if (status) {
+  h->hasp.logout();
+  if (h->hasp.is_error()) {
     isolate->ThrowException(Exception::Error(
-      String::NewFromUtf8(isolate, hasp_statusmap[status])
+      String::NewFromUtf8(isolate, hasp.get_message())
     ));
   }
   args.GetReturnValue().Set(Boolean::New(isolate, !status));
 } 
+
+
 
 void NodeHasp::get_size(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = Isolate::GetCurrent();
@@ -97,34 +95,16 @@ void NodeHasp::get_size(const FunctionCallbackInfo<Value>& args) {
   args.GetReturnValue().Set(Integer::New(isolate, fsize));
 }
 
-hasp_size_t NodeHasp::get_size(Isolate* isolate) {
+hasp_size_t HaspNode::get_size(Isolate* isolate) {
   hasp_size_t fsize;
-  const hasp_status_t status = hasp_get_size(handle, HASP_FILEID_RW, &fsize);
-  if (status) {
+  NodeHasp* h = ObjectWrap::Unwrap<NodeHasp>(args.Holder());
+  fsize = h->hasp.get_size();
+  if (h->hasp.is_error()) {
     isolate->ThrowException(Exception::Error(
-      String::NewFromUtf8(isolate, hasp_statusmap[status])
+      String::NewFromUtf8(isolate, h->hasp.get_message())
     ));
   }
   return fsize;
-}
-
-char* NodeHasp::decrypt(Isolate* isolate, char* data, size_t length) {
-  const hasp_status_t status = hasp_decrypt(handle, data, length);
-  if (status) {
-    isolate->ThrowException(Exception::Error(
-      String::NewFromUtf8(isolate, hasp_statusmap[status])
-    ));
-  }
-  return data;
-}
-
-char* NodeHasp::unwrap_decrypt(Isolate* isolate, char* data, size_t &length) {
-  memcpy(&length, data, __SIZEOF_SIZE_T__);
-  size_t crypto_length = get_crypto_length(length);
-  char* content = new char[crypto_length];
-  memcpy(content, data + __SIZEOF_SIZE_T__, crypto_length);
-  decrypt(isolate, content, crypto_length);
-  return content;
 }
 
 void NodeHasp::read(const FunctionCallbackInfo<Value>& args) {
@@ -133,41 +113,17 @@ void NodeHasp::read(const FunctionCallbackInfo<Value>& args) {
   HandleScope scope(isolate);
   hasp_status_t status;
   hasp_size_t fsize = h->get_size(isolate);
-
-  char* data = new char[fsize];
-  status = hasp_read(h->handle, HASP_FILEID_RW, 0, fsize, data);
-  if (status) {
+  char* content = h->hasp.read();
+  if (h->hasp.is_error()) {
     isolate->ThrowException(Exception::Error(
-      String::NewFromUtf8(isolate, hasp_statusmap[status])
+      String::NewFromUtf8(isolate, h->hasp.get_message())
     ));
   }
-
   size_t length;
-  char* content = h->unwrap_decrypt(isolate, data, length);
   args.GetReturnValue().Set(String::NewFromUtf8(
     isolate, content, String::kNormalString, length
   ));
-  delete data;
   delete content;
-}
-
-char* NodeHasp::encrypt(Isolate* isolate, char* data, size_t length) {
-  const hasp_status_t status = hasp_encrypt(handle, data, length);
-  if (status) {
-    isolate->ThrowException(Exception::Error(
-      String::NewFromUtf8(isolate, hasp_statusmap[status])
-    ));
-  }
-  return data;
-}
-
-char* NodeHasp::encrypt_wrap(Isolate* isolate, char* content, size_t length) {
-  size_t crypto_length = get_crypto_length(length);
-  encrypt(isolate, content, crypto_length);
-  char* wrapped = new char[crypto_length + __SIZEOF_SIZE_T__];
-  memcpy(wrapped, &length, __SIZEOF_SIZE_T__);
-  memcpy(wrapped + __SIZEOF_SIZE_T__, content, crypto_length);
-  return wrapped;
 }
 
 void NodeHasp::write(const FunctionCallbackInfo<Value>& args) {
@@ -188,21 +144,12 @@ void NodeHasp::write(const FunctionCallbackInfo<Value>& args) {
 
   NodeHasp* h = ObjectWrap::Unwrap<NodeHasp>(args.Holder());
   String::Utf8Value input(args[0]);
-  hasp_status_t status;
-  hasp_size_t fsize = h->get_size(isolate);
+  h->hasp.write(*input);
 
-  size_t length = input.length();
-  if (length + __SIZEOF_SIZE_T__ > fsize) {
-    isolate->ThrowException(Exception::Error(
-      String::NewFromUtf8(isolate, "Storage max size exceeded")
-    ));
-  }
 
-  char* data = h->encrypt_wrap(isolate, *input, length);
-  status = hasp_write(h->handle, HASP_FILEID_RW, 0, fsize, data);
-  if (status) {
+  if (h->hasp.is_error) {
     isolate->ThrowException(Exception::Error(
-      String::NewFromUtf8(isolate, hasp_statusmap[status])
+      String::NewFromUtf8(isolate, h->hasp.get_message())
     ));
   }
   delete data;
