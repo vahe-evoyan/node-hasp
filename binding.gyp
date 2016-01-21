@@ -31,7 +31,8 @@
           ],
           "libraries": [
             "-L../libs/hasp/linux/<(target_arch)",
-            "-lhasp_linux"
+            "-lhasp_linux",
+            "-lcrypto"
           ],
         }],
       ],
