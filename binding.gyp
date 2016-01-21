@@ -4,7 +4,7 @@
   "targets": [
     {
       "target_name": "hasp",
-      "sources": [ "src/main.cpp", "src/hasp.cpp" ],
+      "sources": [ "src/main.cpp", "src/node_hasp.cpp", "src/hasp.cpp" ],
       "conditions": [
         ["OS=='mac'", {
           "xcode_settings": {
@@ -18,7 +18,8 @@
           ],
           "libraries": [
             "-L../libs/hasp/darwin",
-            "-lhasp_darwin"
+            "-lhasp_darwin",
+            "-lcrypto"
           ],
         }],
         ["OS=='linux'", {
