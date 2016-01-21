@@ -1,5 +1,5 @@
-#ifndef HASP_H
-#define HASP_H
+#ifndef NODE_HASP_H
+#define NODE_HASP_H
 
 #include <v8.h>
 #include <node.h>
@@ -9,7 +9,7 @@
 
 #define MEMBUFFER_SIZE 128
 
-class Hasp : public node::ObjectWrap {
+class NodeHasp : public node::ObjectWrap {
   public:
     static void Init(v8::Handle<v8::Object> exports);
 
@@ -20,8 +20,8 @@ class Hasp : public node::ObjectWrap {
     char* unwrap_decrypt(v8::Isolate*, char*, size_t&);
 
   private:
-    explicit Hasp();
-    ~Hasp();
+    explicit NodeHasp();
+    ~NodeHasp();
 
     static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
     static v8::Persistent<v8::Function> constructor;
@@ -35,4 +35,4 @@ class Hasp : public node::ObjectWrap {
     hasp_handle_t handle;
 };
 
-#endif // HASP_H
+#endif // NODE_HASP_H

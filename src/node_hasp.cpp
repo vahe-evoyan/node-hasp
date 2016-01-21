@@ -1,19 +1,19 @@
-#include "hasp.h"
+#include "node_hasp.h"
 #include <cstring>
 
 using namespace v8;
 
 #define get_crypto_length(len) len > 16 ? len : 16
 
-Persistent<Function> Hasp::constructor;
+Persistent<Function> NodeHasp::constructor;
 
-Hasp::Hasp() {
+NodeHasp::NodeHasp() {
 }
 
-Hasp::~Hasp() {
+NodeHasp::~NodeHasp() {
 }
 
-void Hasp::Init(Handle<Object> exports) {
+void NodeHasp::Init(Handle<Object> exports) {
   Isolate* isolate = Isolate::GetCurrent();
 
   Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
@@ -30,12 +30,12 @@ void Hasp::Init(Handle<Object> exports) {
   exports->Set(String::NewFromUtf8(isolate, "Hasp"), tpl->GetFunction());
 }
 
-void Hasp::New(const FunctionCallbackInfo<Value>& args) {
+void NodeHasp::New(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = Isolate::GetCurrent();
   HandleScope scope(isolate);
 
   if (args.IsConstructCall()) {
-    Hasp* h = new Hasp();
+    NodeHasp* h = new NodeHasp();
     h->Wrap(args.This());
     args.GetReturnValue().Set(args.This());
   } else {
@@ -46,7 +46,7 @@ void Hasp::New(const FunctionCallbackInfo<Value>& args) {
   }
 }
 
-void Hasp::login(const FunctionCallbackInfo<Value>& args) {
+void NodeHasp::login(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = Isolate::GetCurrent();
   HandleScope scope(isolate);
 
@@ -62,7 +62,7 @@ void Hasp::login(const FunctionCallbackInfo<Value>& args) {
     return;
   }
 
-  Hasp* h = ObjectWrap::Unwrap<Hasp>(args.Holder());
+  NodeHasp* h = ObjectWrap::Unwrap<NodeHasp>(args.Holder());
   String::Utf8Value vendor_code(args[0]);
   hasp_status_t status;
   status = hasp_login(HASP_DEFAULT_FID,
@@ -76,10 +76,10 @@ void Hasp::login(const FunctionCallbackInfo<Value>& args) {
   args.GetReturnValue().Set(Boolean::New(isolate, !status));
 }
 
-void Hasp::logout(const FunctionCallbackInfo<Value>& args) {
+void NodeHasp::logout(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = Isolate::GetCurrent();
   HandleScope scope(isolate);
-  Hasp* h = ObjectWrap::Unwrap<Hasp>(args.Holder());
+  NodeHasp* h = ObjectWrap::Unwrap<NodeHasp>(args.Holder());
   hasp_status_t status;
   status = hasp_logout(h->handle);
   if (status) {
@@ -90,14 +90,14 @@ void Hasp::logout(const FunctionCallbackInfo<Value>& args) {
   args.GetReturnValue().Set(Boolean::New(isolate, !status));
 } 
 
-void Hasp::get_size(const FunctionCallbackInfo<Value>& args) {
+void NodeHasp::get_size(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = Isolate::GetCurrent();
-  Hasp* h = ObjectWrap::Unwrap<Hasp>(args.Holder());
+  NodeHasp* h = ObjectWrap::Unwrap<NodeHasp>(args.Holder());
   int32_t fsize = static_cast<int32_t>(h->get_size(isolate));
   args.GetReturnValue().Set(Integer::New(isolate, fsize));
 }
 
-hasp_size_t Hasp::get_size(Isolate* isolate) {
+hasp_size_t NodeHasp::get_size(Isolate* isolate) {
   hasp_size_t fsize;
   const hasp_status_t status = hasp_get_size(handle, HASP_FILEID_RW, &fsize);
   if (status) {
@@ -108,7 +108,7 @@ hasp_size_t Hasp::get_size(Isolate* isolate) {
   return fsize;
 }
 
-char* Hasp::decrypt(Isolate* isolate, char* data, size_t length) {
+char* NodeHasp::decrypt(Isolate* isolate, char* data, size_t length) {
   const hasp_status_t status = hasp_decrypt(handle, data, length);
   if (status) {
     isolate->ThrowException(Exception::Error(
@@ -118,7 +118,7 @@ char* Hasp::decrypt(Isolate* isolate, char* data, size_t length) {
   return data;
 }
 
-char* Hasp::unwrap_decrypt(Isolate* isolate, char* data, size_t &length) {
+char* NodeHasp::unwrap_decrypt(Isolate* isolate, char* data, size_t &length) {
   memcpy(&length, data, __SIZEOF_SIZE_T__);
   size_t crypto_length = get_crypto_length(length);
   char* content = new char[crypto_length];
@@ -127,8 +127,8 @@ char* Hasp::unwrap_decrypt(Isolate* isolate, char* data, size_t &length) {
   return content;
 }
 
-void Hasp::read(const FunctionCallbackInfo<Value>& args) {
-  Hasp* h = ObjectWrap::Unwrap<Hasp>(args.Holder());
+void NodeHasp::read(const FunctionCallbackInfo<Value>& args) {
+  NodeHasp* h = ObjectWrap::Unwrap<NodeHasp>(args.Holder());
   Isolate* isolate = Isolate::GetCurrent();
   HandleScope scope(isolate);
   hasp_status_t status;
@@ -151,7 +151,7 @@ void Hasp::read(const FunctionCallbackInfo<Value>& args) {
   delete content;
 }
 
-char* Hasp::encrypt(Isolate* isolate, char* data, size_t length) {
+char* NodeHasp::encrypt(Isolate* isolate, char* data, size_t length) {
   const hasp_status_t status = hasp_encrypt(handle, data, length);
   if (status) {
     isolate->ThrowException(Exception::Error(
@@ -161,7 +161,7 @@ char* Hasp::encrypt(Isolate* isolate, char* data, size_t length) {
   return data;
 }
 
-char* Hasp::encrypt_wrap(Isolate* isolate, char* content, size_t length) {
+char* NodeHasp::encrypt_wrap(Isolate* isolate, char* content, size_t length) {
   size_t crypto_length = get_crypto_length(length);
   encrypt(isolate, content, crypto_length);
   char* wrapped = new char[crypto_length + __SIZEOF_SIZE_T__];
@@ -170,7 +170,7 @@ char* Hasp::encrypt_wrap(Isolate* isolate, char* content, size_t length) {
   return wrapped;
 }
 
-void Hasp::write(const FunctionCallbackInfo<Value>& args) {
+void NodeHasp::write(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = Isolate::GetCurrent();
   HandleScope scope(isolate);
 
@@ -186,7 +186,7 @@ void Hasp::write(const FunctionCallbackInfo<Value>& args) {
     return;
   }
 
-  Hasp* h = ObjectWrap::Unwrap<Hasp>(args.Holder());
+  NodeHasp* h = ObjectWrap::Unwrap<NodeHasp>(args.Holder());
   String::Utf8Value input(args[0]);
   hasp_status_t status;
   hasp_size_t fsize = h->get_size(isolate);
