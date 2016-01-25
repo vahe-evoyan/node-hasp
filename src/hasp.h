@@ -9,7 +9,7 @@ class Hasp {
     Hasp();
     ~Hasp();
 
-    char* read();
+    char* read(size_t&);
     void write(char*, size_t);
     void clean();
     void login(const char*);
@@ -21,7 +21,7 @@ class Hasp {
     int get_errno();
 
   protected:
-    char* decrypt(const char*);
+    char* decrypt(const char*, size_t&);
     char* encrypt(char*, size_t);
 
   private:

@@ -107,16 +107,15 @@ void NodeHasp::read(const FunctionCallbackInfo<Value>& args) {
   NodeHasp* h = ObjectWrap::Unwrap<NodeHasp>(args.Holder());
   Isolate* isolate = Isolate::GetCurrent();
   HandleScope scope(isolate);
-  char* content = h->hasp.read();
+  size_t length;
+  char* content = h->hasp.read(length);
   if (h->hasp.is_error()) {
     isolate->ThrowException(Exception::Error(
       String::NewFromUtf8(isolate, h->hasp.get_message())
     ));
   }
-  // size_t length; // unclear
-  // TODO: get length from hasp.read() function
   args.GetReturnValue().Set(String::NewFromUtf8(
-    isolate, content, String::kNormalString //, length
+    isolate, content, String::kNormalString, length
   ));
   delete content;
 }

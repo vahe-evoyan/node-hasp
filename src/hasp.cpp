@@ -15,8 +15,7 @@ Hasp::Hasp(void) : status(HASP_STATUS_OK) {
 Hasp::~Hasp(void) {
 }
 
-char* Hasp::decrypt(const char* data) {
-  size_t length;
+char* Hasp::decrypt(const char* data, size_t& length) {
   memcpy(&length, data, __SIZEOF_SIZE_T__);
   size_t crypto_length = get_crypto_length(length);
   // hmac
@@ -32,19 +31,18 @@ char* Hasp::decrypt(const char* data) {
                              NULL, NULL);
   if (0 != memcmp(digest, auth, HMAC_LENGTH)) {
     status = HASP_INT_ERR;
-    return;
+    return NULL;
   }
   status = hasp_decrypt(handle, content, crypto_length);
-  content[crypto_length] = 0; // FIXME: may fail for large data
   delete [] digest;
   return content;
 }
 
-char* Hasp::read() {
+char* Hasp::read(size_t& length) {
   hasp_size_t fsize = get_size();
   char* data = new char[fsize];
   status = hasp_read(handle, HASP_FILEID_RW, 0, fsize, data);
-  return decrypt(data);
+  return decrypt(data, length);
 }
 
 void Hasp::login(const char* vendor_code) {
