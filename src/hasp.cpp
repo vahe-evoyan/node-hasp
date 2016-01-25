@@ -83,9 +83,8 @@ char* Hasp::encrypt(char* content, size_t length) {
   return wrapped;
 }
 
-void Hasp::write(char* input) {
+void Hasp::write(char* input, size_t length) {
   hasp_size_t fsize = get_size();
-  size_t length = strlen(input);
   // FIXME: get the size of HMAC dinamically
   if (length + __SIZEOF_SIZE_T__ + 32 > fsize) {
     // space exceeded

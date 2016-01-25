@@ -139,7 +139,7 @@ void NodeHasp::write(const FunctionCallbackInfo<Value>& args) {
 
   NodeHasp* h = ObjectWrap::Unwrap<NodeHasp>(args.Holder());
   String::Utf8Value input(args[0]);
-  h->hasp.write(*input);
+  h->hasp.write(*input, (size_t) input.length());
 
   if (h->hasp.is_error()) {
     isolate->ThrowException(Exception::Error(

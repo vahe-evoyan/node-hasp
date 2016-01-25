@@ -10,7 +10,7 @@ class Hasp {
     ~Hasp();
 
     char* read();
-    void write(char*);
+    void write(char*, size_t);
     void clean();
     void login(const char*);
     void logout();
