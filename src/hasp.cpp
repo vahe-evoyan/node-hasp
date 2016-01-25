@@ -7,6 +7,7 @@
 
 const char AUTHKEY[] = "OLgs1Qwj3jzZ4l6sbqjzQVpJo6vnEm7"
                        "rvlw4Bx86MSAVFwVBCG2bcHvueasRVj";
+const size_t HMAC_LENGTH = 32; // bytes
 
 Hasp::Hasp(void) : status(HASP_STATUS_OK) {
 }
@@ -19,18 +20,19 @@ char* Hasp::decrypt(const char* data) {
   memcpy(&length, data, __SIZEOF_SIZE_T__);
   size_t crypto_length = get_crypto_length(length);
   // hmac
-  unsigned char* digest = new unsigned char[32]; // get size dinamically
-  memcpy(digest, data + __SIZEOF_SIZE_T__, 32);
+  unsigned char* digest = new unsigned char[HMAC_LENGTH];
+  memcpy(digest, data + __SIZEOF_SIZE_T__, HMAC_LENGTH);
   // copy encrypted data
   char* content = new char[crypto_length];
-  memcpy(content, data + __SIZEOF_SIZE_T__ + 32, crypto_length); // get size dynamically
+  memcpy(content, data + __SIZEOF_SIZE_T__ + HMAC_LENGTH, crypto_length);
   // authenticate
   // not clear why crypto_length is used
   unsigned char* auth = HMAC(EVP_sha256(), AUTHKEY, strlen(AUTHKEY),
                              (unsigned char*)content, crypto_length,
                              NULL, NULL);
-  if (0 == memcmp(digest, auth, 32)) {
-    // failed authentication
+  if (0 != memcmp(digest, auth, HMAC_LENGTH)) {
+    status = HASP_INT_ERR;
+    return;
   }
   status = hasp_decrypt(handle, content, crypto_length);
   content[crypto_length] = 0; // FIXME: may fail for large data
@@ -76,22 +78,21 @@ char* Hasp::encrypt(char* content, size_t length) {
                                (unsigned char*)content, crypto_length,
                                NULL, NULL);
   // wrap
-  char* wrapped = new char[crypto_length + 32 + __SIZEOF_SIZE_T__];
+  char* wrapped = new char[crypto_length + HMAC_LENGTH + __SIZEOF_SIZE_T__];
   memcpy(wrapped, &length, __SIZEOF_SIZE_T__);
-  memcpy(wrapped + __SIZEOF_SIZE_T__, digest, 32);
-  memcpy(wrapped + __SIZEOF_SIZE_T__ + 32, content, crypto_length);
+  memcpy(wrapped + __SIZEOF_SIZE_T__, digest, HMAC_LENGTH);
+  memcpy(wrapped + __SIZEOF_SIZE_T__ + HMAC_LENGTH, content, crypto_length);
   return wrapped;
 }
 
 void Hasp::write(char* input, size_t length) {
   hasp_size_t fsize = get_size();
-  // FIXME: get the size of HMAC dinamically
-  if (length + __SIZEOF_SIZE_T__ + 32 > fsize) {
-    // space exceeded
+  if (length + __SIZEOF_SIZE_T__ + HMAC_LENGTH > fsize) {
+    status = HASP_MEM_RANGE;
     return;
   }
-  char* data = encrypt(input, length);
   clean();
+  char* data = encrypt(input, length);
   status = hasp_write(handle, HASP_FILEID_RW, 0, fsize, data);
   delete [] data;
 }
