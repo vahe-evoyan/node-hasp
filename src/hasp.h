@@ -1,38 +1,32 @@
 #ifndef HASP_H
 #define HASP_H
 
-#include <v8.h>
-#include <node.h>
-#include <node_object_wrap.h>
-#include "hasp_api.h"
-#include "errors.h"
+#include <hasp_api.h>
+#include <stdlib.h>
 
-#define MEMBUFFER_SIZE 128
-
-class Hasp : public node::ObjectWrap {
+class Hasp {
   public:
-    static void Init(v8::Handle<v8::Object> exports);
-
-    hasp_size_t get_size(v8::Isolate*);
-    char* encrypt(v8::Isolate*, char*, size_t);
-    char* encrypt_wrap(v8::Isolate*, char*, size_t);
-    char* decrypt(v8::Isolate*, char*, size_t);
-    char* unwrap_decrypt(v8::Isolate*, char*, size_t&);
-
-  private:
-    explicit Hasp();
+    Hasp();
     ~Hasp();
 
-    static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
-    static v8::Persistent<v8::Function> constructor;
+    char* read(size_t&);
+    void write(char*, size_t);
+    void clean();
+    void login(const char*);
+    void logout();
+    hasp_size_t get_size();
 
-    static void login(const v8::FunctionCallbackInfo<v8::Value>& args);
-    static void logout(const v8::FunctionCallbackInfo<v8::Value>& args);
-    static void get_size(const v8::FunctionCallbackInfo<v8::Value>& args);
-    static void read(const v8::FunctionCallbackInfo<v8::Value>& args);
-    static void write(const v8::FunctionCallbackInfo<v8::Value>& args);
+    bool is_error();
+    const char* get_message();
+    int get_errno();
 
+  protected:
+    char* decrypt(const char*, size_t&);
+    char* encrypt(char*, size_t);
+
+  private:
     hasp_handle_t handle;
+    hasp_status_t status;
 };
 
 #endif // HASP_H
